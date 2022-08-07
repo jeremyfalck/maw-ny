@@ -1,15 +1,29 @@
-import React from "react";
-import logo from "./logo.svg";
-import { Counter } from "./features/counter/Counter";
 import "./App.css";
 import { ExpensesList } from "./features/expenses_list/ExpensesList";
+import { Route, Routes } from "react-router-dom";
+import LoginPage from "./features/login/LoginPage";
+import HomePage from "./features/welcome/HomePage";
+import ProtectedRoute from "./features/common/navigation/ProtectedRoute";
+import { useAppDispatch } from "./app/hooks";
+import { getUser } from "./features/common/auth/authSlice";
 
 function App() {
+  const dispatch = useAppDispatch();
+  dispatch(getUser());
   return (
-    <div className="App">
-      <header className="App-header">
-        <ExpensesList />
-      </header>
+    <div>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="expenses"
+          element={
+            <ProtectedRoute>
+              <ExpensesList />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="login" element={<LoginPage />} />
+      </Routes>
     </div>
   );
 }
