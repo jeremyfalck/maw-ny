@@ -1,9 +1,16 @@
-import { useAppSelector } from "../../app/hooks";
+import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { selectAuthUser } from "../common/auth/authSlice";
 import { Avatar } from "@mui/material";
+import { useEffect } from "react";
+import { getUserExpenses } from "./expensesSlice";
 
 export function ExpensesList() {
+  const dispatch = useAppDispatch();
   const user = useAppSelector(selectAuthUser);
+
+  useEffect(() => {
+    dispatch(getUserExpenses());
+  }, [dispatch]);
 
   return (
     <div className="bg-amber-500 w-full h-full">

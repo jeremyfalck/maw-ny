@@ -1,5 +1,14 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createNextState,
+  createSlice,
+  PayloadAction,
+  ThunkDispatch,
+} from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
+import { collection, addDoc, getDocs } from "firebase/firestore";
+import { firestore } from "../../firebase";
+import { FirestoreUser } from "./model/FirestoreUser";
 
 export interface Expense {
   name: string;
@@ -37,6 +46,35 @@ export const expensesSlice = createSlice({
   //       });
   //   },
 });
+
+export const getUserExpenses = createAsyncThunk(
+  "getUserExpenses",
+  async (arg, { getState }) => {
+    const state: RootState | null = getState() as RootState | null;
+    getDocs(collection(firestore, "users"))
+      .then((querySnapshot) => {
+        console.log(querySnapshot);
+        if (querySnapshot.empty) {
+          try {
+            addDoc(collection(firestore, "users"), {
+              id: state?.auth?.user?.resourceName,
+              monthlyRevenue: 0,
+              expenses: [],
+            })
+              .then((docRef) => {
+                console.log("Document written with ID: ", docRef.id);
+              })
+              .catch((e) => console.log(e));
+          } catch (e) {
+            console.error("Error adding document: ", e);
+          }
+        } else {
+          console.log(querySnapshot.docs);
+        }
+      })
+      .catch((e) => console.log(e));
+  }
+);
 
 export const { addExpense, removeExpense } = expensesSlice.actions;
 
