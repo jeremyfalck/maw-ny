@@ -1,10 +1,10 @@
 export interface FirestoreUser {
   id: string;
   monthlyRevenue: number;
-  expenses: Expense[];
+  expenses: FirestoreExpense[];
 }
 
-export interface Expense {
+export interface FirestoreExpense {
   name: string;
   monthlyAmount: number;
   annualAmount: number;

@@ -2,7 +2,7 @@ import { Button, TextField } from "@mui/material";
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
 import { addExpense, selectUserExpenses } from "./expensesSlice";
-import { Expense } from "./model/FirestoreUser";
+import { FirestoreExpense } from "./model/FirestoreUser";
 
 export default function ExpensesList() {
   const dispatch = useAppDispatch();
@@ -43,23 +43,24 @@ export default function ExpensesList() {
           Ajouter
         </Button>
       </div>
-      {expenses?.map((expense: Expense) => (
-        <ExpenseItem expense={expense} />
+      {expenses?.map((expense: FirestoreExpense) => (
+        <ExpenseItem expense={expense} key={expense.name} />
       ))}
     </div>
   );
 }
 
 interface ExpenseItemProps {
-  expense: Expense;
+  expense: FirestoreExpense;
 }
 
 function ExpenseItem({ expense }: ExpenseItemProps) {
   return (
-    <div className="flex">
-      <TextField placeholder="nom">{expense.name}</TextField>
-      <TextField placeholder="coût mensuel">{expense.monthlyAmount}</TextField>
-      <TextField placeholder="coût annuel">{expense.annualAmount}</TextField>
+    <div className="flex mt-2">
+      <TextField placeholder="nom" value={expense.name} />
+      <TextField placeholder="coût mensuel" value={expense.monthlyAmount} />
+      <TextField placeholder="coût annuel" value={expense.annualAmount} />
+      <Button variant="contained">Modifier</Button>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
 import { getDoc, DocumentReference, doc, setDoc } from "firebase/firestore";
 import { firestore } from "../../firebase";
-import { FirestoreUser } from "./model/FirestoreUser";
+import { FirestoreExpense, FirestoreUser } from "./model/FirestoreUser";
 
 export interface Expense {
   name: string;
@@ -14,12 +14,16 @@ export interface ExpensesState {
   expenses: Expense[];
   status: "idle" | "loading" | "failed";
   firestoreUser: FirestoreUser | null;
+  monthlyRevenue: number;
+  userId: string;
 }
 
 const initialState: ExpensesState = {
   expenses: [],
   status: "idle",
   firestoreUser: null,
+  monthlyRevenue: 0,
+  userId: "",
 };
 
 export const expensesSlice = createSlice({
@@ -34,8 +38,13 @@ export const expensesSlice = createSlice({
         (expense) => expense !== action.payload
       );
     },
-    setUserExpenses: (state, action: PayloadAction<FirestoreUser>) => {
+    setUser: (state, action: PayloadAction<FirestoreUser>) => {
       state.firestoreUser = action.payload;
+    },
+    setUserExpenses: (state, action: PayloadAction<FirestoreUser>) => {
+      state.expenses = action.payload.expenses;
+      state.monthlyRevenue = action.payload.monthlyRevenue;
+      state.userId = action.payload.id;
     },
   },
 });
@@ -43,8 +52,8 @@ export const expensesSlice = createSlice({
 export const getUserExpensesRef = createAsyncThunk(
   "getUserExpensesRef",
   async (_arg, { getState, dispatch }) => {
-    const state: RootState | null = getState() as RootState | null;
-    const resourceName = state?.auth?.user?.resourceName?.split("/")[1];
+    const state: RootState = getState() as RootState;
+    const resourceName = state.auth.user?.resourceName?.split("/")[1];
     if (resourceName) {
       const document = doc(firestore, "users", resourceName);
       getDoc(document)
@@ -64,7 +73,7 @@ export const getUserExpensesRef = createAsyncThunk(
               console.error("Error adding document: ", e);
             }
           } else {
-            dispatch(getUserExpenses(docSnap.data().expenses));
+            dispatch(setUserExpenses(docSnap.data() as FirestoreUser));
           }
         })
         .catch((e) => console.log(e));
@@ -72,25 +81,29 @@ export const getUserExpensesRef = createAsyncThunk(
   }
 );
 
-export const getUserExpenses = createAsyncThunk(
-  "getUserExpenses",
-  async (expenses: DocumentReference[], { dispatch }) => {
-    expenses.forEach((epxenseRef) => {
-      getDoc(epxenseRef)
-        .then((doc) => {
-          const data = doc.data();
-          data && dispatch(pushExpense(data as Expense));
-        })
-        .catch((e) => console.log(e));
-    });
-  }
-);
-
 export const addExpense = createAsyncThunk(
   "addExpense",
   async (expense: Expense, { getState, dispatch }) => {
-    //TODO add expense to firestore
-    //TODO add expense reference to user expenses
+    const resourceName = (
+      getState() as RootState
+    ).auth.user?.resourceName?.split("/")[1];
+    if (resourceName) {
+      const document = doc(firestore, "users", resourceName);
+      try {
+        setDoc(document, {
+          id: resourceName,
+          monthlyRevenue: 0,
+          expenses: [...(getState() as RootState).expenses.expenses, expense],
+        })
+          .then((res) => {
+            console.log("added expense !");
+            dispatch(getUserExpensesRef());
+          })
+          .catch((e) => console.log(e));
+      } catch (e) {
+        console.error("Error adding expense: ", e);
+      }
+    }
   }
 );
 
@@ -98,7 +111,6 @@ export const { pushExpense, removeExpense, setUserExpenses } =
   expensesSlice.actions;
 
 export const selectExpenses = (state: RootState) => state.expenses.expenses;
-export const selectUserExpenses = (state: RootState) =>
-  state.expenses.firestoreUser?.expenses;
+export const selectUserExpenses = (state: RootState) => state.expenses.expenses;
 
 export default expensesSlice.reducer;

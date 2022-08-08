@@ -25,6 +25,8 @@ export function ExpensesPage() {
           alt={(user?.names[0] && user?.names[0]?.displayName) || ""}
           src={user?.photos[0] && user?.photos[0]?.url}
         />
+      </div>
+      <div className="mt-4">
         <ExpensesList />
       </div>
     </div>
