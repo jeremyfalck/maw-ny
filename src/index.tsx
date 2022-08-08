@@ -6,8 +6,10 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
-import "./firebase"
+import "./firebase";
+import { initInterceptors } from "./app/interceptors";
 
+initInterceptors();
 const container = document.getElementById("root")!;
 const root = createRoot(container);
 

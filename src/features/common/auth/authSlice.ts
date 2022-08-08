@@ -56,10 +56,10 @@ export const authWithGoogle = (): AppThunk => (dispatch, getState) => {
     .then((result) => {
       const credential = GoogleAuthProvider.credentialFromResult(result);
       const token = credential?.accessToken;
-      dispatch(getUser());
 
       dispatch(loggedInSuccess(token || ""));
-      localStorage.setItem("token", token || "");
+      dispatch(getUser());
+      localStorage.setItem("token", token || "yolo");
     })
     .catch((error) => {
       console.log(error);

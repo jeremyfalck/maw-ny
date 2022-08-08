@@ -1,28 +1,65 @@
+import { Button, TextField } from "@mui/material";
+import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { selectAuthUser } from "../common/auth/authSlice";
-import { Avatar } from "@mui/material";
-import { useEffect } from "react";
-import { getUserExpenses } from "./expensesSlice";
+import { addExpense, selectUserExpenses } from "./expensesSlice";
+import { Expense } from "./model/FirestoreUser";
 
-export function ExpensesList() {
+export default function ExpensesList() {
   const dispatch = useAppDispatch();
-  const user = useAppSelector(selectAuthUser);
+  const expenses = useAppSelector(selectUserExpenses);
 
-  useEffect(() => {
-    dispatch(getUserExpenses());
-  }, [dispatch]);
+  const [name, setName] = useState("");
+  const [monthlyAmount, setMonthlyAmount] = useState(0);
+  const [annualAmount, setAnnualAmount] = useState(0);
 
   return (
-    <div className="bg-amber-500 w-full h-full">
-      <div className="flex justify-between pt-2 px-2">
-        <p>
-          Bienvenue {(user?.names[0] && user?.names[0]?.displayName) || ""} !
-        </p>
-        <Avatar
-          alt={(user?.names[0] && user?.names[0]?.displayName) || ""}
-          src={user?.photos[0] && user?.photos[0]?.url}
+    <div className="flex flex-col items-center">
+      <p>Ajouter une nouvelle dépense</p>
+      <div className="flex">
+        <TextField
+          placeholder="nom"
+          onChange={(e) => setName(e.target.value)}
         />
+        <TextField
+          placeholder="coût mensuel"
+          onChange={(e) => setMonthlyAmount(parseInt(e.target.value))}
+        />
+        <TextField
+          placeholder="coût annuel"
+          onChange={(e) => setAnnualAmount(parseInt(e.target.value))}
+        />
+        <Button
+          variant="contained"
+          onClick={() => {
+            dispatch(
+              addExpense({
+                name,
+                monthlyAmount,
+                annualAmount,
+              })
+            );
+          }}
+        >
+          Ajouter
+        </Button>
       </div>
+      {expenses?.map((expense: Expense) => (
+        <ExpenseItem expense={expense} />
+      ))}
+    </div>
+  );
+}
+
+interface ExpenseItemProps {
+  expense: Expense;
+}
+
+function ExpenseItem({ expense }: ExpenseItemProps) {
+  return (
+    <div className="flex">
+      <TextField placeholder="nom">{expense.name}</TextField>
+      <TextField placeholder="coût mensuel">{expense.monthlyAmount}</TextField>
+      <TextField placeholder="coût annuel">{expense.annualAmount}</TextField>
     </div>
   );
 }

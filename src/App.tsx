@@ -1,5 +1,5 @@
 import "./App.css";
-import { ExpensesList } from "./features/expenses_list/ExpensesList";
+import { ExpensesPage } from "./features/expenses_list/ExpensesPage";
 import { Route, Routes } from "react-router-dom";
 import LoginPage from "./features/login/LoginPage";
 import HomePage from "./features/welcome/HomePage";
@@ -18,7 +18,7 @@ function App() {
           path="expenses"
           element={
             <ProtectedRoute>
-              <ExpensesList />
+              <ExpensesPage />
             </ProtectedRoute>
           }
         />
