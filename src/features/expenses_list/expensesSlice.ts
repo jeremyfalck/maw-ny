@@ -26,6 +26,9 @@ export const expensesSlice = createSlice({
   name: "expenses",
   initialState,
   reducers: {
+    pushExpense: (state, action: PayloadAction<Expense>) => {
+      state.expenses.push(action.payload);
+    },
     removeExpense: (state, action: PayloadAction<Expense>) => {
       state.expenses = state.expenses.filter(
         (expense) => expense !== action.payload
@@ -39,14 +42,13 @@ export const expensesSlice = createSlice({
 
 export const getUserExpensesRef = createAsyncThunk(
   "getUserExpensesRef",
-  async (arg, { getState, dispatch }) => {
+  async (_arg, { getState, dispatch }) => {
     const state: RootState | null = getState() as RootState | null;
     const resourceName = state?.auth?.user?.resourceName?.split("/")[1];
     if (resourceName) {
       const document = doc(firestore, "users", resourceName);
       getDoc(document)
         .then((docSnap) => {
-          console.log("exists", docSnap.exists());
           if (!docSnap.exists()) {
             try {
               setDoc(document, {
@@ -55,14 +57,14 @@ export const getUserExpensesRef = createAsyncThunk(
                 expenses: [],
               })
                 .then((res) => {
-                  dispatch(getUserExpenses(document));
+                  console.log("created first user object !");
                 })
                 .catch((e) => console.log(e));
             } catch (e) {
               console.error("Error adding document: ", e);
             }
           } else {
-            console.log(docSnap.data());
+            dispatch(getUserExpenses(docSnap.data().expenses));
           }
         })
         .catch((e) => console.log(e));
@@ -72,14 +74,15 @@ export const getUserExpensesRef = createAsyncThunk(
 
 export const getUserExpenses = createAsyncThunk(
   "getUserExpenses",
-  async (docRef: DocumentReference, { dispatch }) => {
-    getDoc(docRef)
-      .then((doc) => {
-        const data = doc.data();
-        console.log(data);
-        data && dispatch(setUserExpenses(data as FirestoreUser));
-      })
-      .catch((e) => console.log(e));
+  async (expenses: DocumentReference[], { dispatch }) => {
+    expenses.forEach((epxenseRef) => {
+      getDoc(epxenseRef)
+        .then((doc) => {
+          const data = doc.data();
+          data && dispatch(pushExpense(data as Expense));
+        })
+        .catch((e) => console.log(e));
+    });
   }
 );
 
@@ -91,7 +94,8 @@ export const addExpense = createAsyncThunk(
   }
 );
 
-export const { removeExpense, setUserExpenses } = expensesSlice.actions;
+export const { pushExpense, removeExpense, setUserExpenses } =
+  expensesSlice.actions;
 
 export const selectExpenses = (state: RootState) => state.expenses.expenses;
 export const selectUserExpenses = (state: RootState) =>
