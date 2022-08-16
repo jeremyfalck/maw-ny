@@ -1,17 +1,11 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../../app/store";
-import { getDoc, DocumentReference, doc, setDoc } from "firebase/firestore";
+import { getDoc, doc, setDoc, updateDoc } from "firebase/firestore";
 import { firestore } from "../../firebase";
 import { FirestoreExpense, FirestoreUser } from "./model/FirestoreUser";
 
-export interface Expense {
-  name: string;
-  monthlyAmount: number;
-  annualAmount: number;
-}
-
 export interface ExpensesState {
-  expenses: Expense[];
+  expenses: FirestoreExpense[];
   status: "idle" | "loading" | "failed";
   firestoreUser: FirestoreUser | null;
   monthlyRevenue: number;
@@ -30,14 +24,14 @@ export const expensesSlice = createSlice({
   name: "expenses",
   initialState,
   reducers: {
-    pushExpense: (state, action: PayloadAction<Expense>) => {
+    pushExpense: (state, action: PayloadAction<FirestoreExpense>) => {
       state.expenses.push(action.payload);
     },
-    removeExpense: (state, action: PayloadAction<Expense>) => {
-      state.expenses = state.expenses.filter(
-        (expense) => expense !== action.payload
-      );
-    },
+    // removeExpense: (state, action: PayloadAction<Expense>) => {
+    //   state.expenses = state.expenses.filter(
+    //     (expense) => expense !== action.payload
+    //   );
+    // },
     setUser: (state, action: PayloadAction<FirestoreUser>) => {
       state.firestoreUser = action.payload;
     },
@@ -46,6 +40,14 @@ export const expensesSlice = createSlice({
       state.monthlyRevenue = action.payload.monthlyRevenue;
       state.userId = action.payload.id;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(
+      removeExpense.fulfilled,
+      (state, action: PayloadAction<FirestoreExpense[]>) => {
+        state.expenses = action.payload as FirestoreExpense[];
+      }
+    );
   },
 });
 
@@ -83,7 +85,7 @@ export const getUserExpensesRef = createAsyncThunk(
 
 export const addExpense = createAsyncThunk(
   "addExpense",
-  async (expense: Expense, { getState, dispatch }) => {
+  async (expense: FirestoreExpense, { getState, dispatch }) => {
     const resourceName = (
       getState() as RootState
     ).auth.user?.resourceName?.split("/")[1];
@@ -107,8 +109,41 @@ export const addExpense = createAsyncThunk(
   }
 );
 
-export const { pushExpense, removeExpense, setUserExpenses } =
-  expensesSlice.actions;
+export const removeExpense = createAsyncThunk<
+  FirestoreExpense[],
+  FirestoreExpense,
+  {
+    rejectValue: any;
+  }
+>("removeExpense", async (expense: FirestoreExpense, thunkApi) => {
+  const resourceName = (
+    thunkApi.getState() as RootState
+  ).auth.user?.resourceName?.split("/")[1];
+  if (resourceName) {
+    const document = doc(firestore, "users", resourceName);
+    try {
+      try {
+        const docSnap = await getDoc(document);
+        const filteredExpenses =
+          (docSnap.data() as FirestoreUser).expenses.filter(
+            (exp) => exp.name !== expense.name
+          ) || [];
+        updateDoc(document, {
+          expenses: filteredExpenses,
+        });
+        return filteredExpenses;
+      } catch (e) {
+        console.log(e);
+        return thunkApi.rejectWithValue(e);
+      }
+    } catch (e) {
+      console.error("Error removing expense: ", e);
+      return thunkApi.rejectWithValue(e);
+    }
+  }
+});
+
+export const { pushExpense, setUserExpenses } = expensesSlice.actions;
 
 export const selectExpenses = (state: RootState) => state.expenses.expenses;
 export const selectUserExpenses = (state: RootState) => state.expenses.expenses;

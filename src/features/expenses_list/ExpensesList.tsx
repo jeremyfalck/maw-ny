@@ -1,7 +1,7 @@
 import { Button, TextField } from "@mui/material";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { addExpense, selectUserExpenses } from "./expensesSlice";
+import { addExpense, removeExpense, selectUserExpenses } from "./expensesSlice";
 import { FirestoreExpense } from "./model/FirestoreUser";
 
 export default function ExpensesList() {
@@ -55,12 +55,31 @@ interface ExpenseItemProps {
 }
 
 function ExpenseItem({ expense }: ExpenseItemProps) {
+  const dispatch = useAppDispatch();
+
+  const deleteExpense = useCallback(() => {
+    dispatch(removeExpense(expense));
+  }, []);
+
   return (
     <div className="flex mt-2">
       <TextField placeholder="nom" value={expense.name} />
-      <TextField placeholder="coût mensuel" value={expense.monthlyAmount} />
-      <TextField placeholder="coût annuel" value={expense.annualAmount} />
-      <Button variant="contained">Modifier</Button>
+      <TextField
+        placeholder="coût mensuel"
+        value={expense.monthlyAmount}
+        className="ml-2"
+      />
+      <TextField
+        placeholder="coût annuel"
+        value={expense.annualAmount}
+        className="ml-2"
+      />
+      <Button variant="contained" className="ml-2">
+        Modifier
+      </Button>
+      <Button variant="contained" className="ml-2" onClick={deleteExpense}>
+        Supprimer
+      </Button>
     </div>
   );
 }
